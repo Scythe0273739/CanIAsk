@@ -1,294 +1,240 @@
-import { useState, useRef } from "react";
+<title>CAN I COURT YOU?</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Nunito:wght@500;700&display=swap">
+<style>
+  /* Layout: one centered card-less stage, big question, two buttons; the No button escapes across the whole viewport. */
+  :root {
+    --bg: #fff0f4;
+    --bg-glow: #ffd3e1;
+    --fg: #3d1630;
+    --muted: #8a5a74;
+    --accent: #f0457a;
+    --accent-fg: #ffffff;
+    --soft: #ffffff;
+    --soft-line: #f3b8cc;
+    --font-display: "Fredoka", "Trebuchet MS", system-ui, sans-serif;
+    --font-body: "Nunito", system-ui, sans-serif;
+    --pop: 1;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #1c0d19; --bg-glow: #3a1430; --fg: #ffe6ee; --muted: #d6a3bb;
+      --accent: #ff6a98; --accent-fg: #2a0b1c; --soft: #2c1226; --soft-line: #5b2a49;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #1c0d19; --bg-glow: #3a1430; --fg: #ffe6ee; --muted: #d6a3bb;
+    --accent: #ff6a98; --accent-fg: #2a0b1c; --soft: #2c1226; --soft-line: #5b2a49;
+    color-scheme: dark;
+  }
 
-const ACTIVITIES = ["Coffee date ☕", "Dinner together 🍽️", "Movie night 🎬", "Gaming together 🎮", "Just talking all night 🌙", "Other 💭"];
-const TIMES = ["Morning (10am)", "Afternoon (2pm)", "Evening (6pm)", "Night (8pm)", "Late night (11pm)"];
-const YOUR_EMAIL = "johndaveabrera410@gmail.com";
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    background: radial-gradient(120% 80% at 50% 0%, var(--bg-glow), var(--bg) 60%) var(--bg);
+    color: var(--fg);
+    font-family: var(--font-body);
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-block: 24px;
+    overflow: hidden;
+  }
+  .stage {
+    min-height: 100%;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 28px; text-align: center;
+  }
+  .view[hidden] { display: none; }
+  .view { display: flex; flex-direction: column; align-items: center; gap: 24px; width: 100%; max-width: 30rem; }
 
-export default function DateAsk() {
-  const [phase, setPhase] = useState("ask");
-  const [noPos, setNoPos] = useState({ x: null, y: null });
-  const [selectedDate, setSelectedDate] = useState("");
-  const [selectedTime, setSelectedTime] = useState(null);
-  const [selectedActivity, setSelectedActivity] = useState(null);
-  const [customActivity, setCustomActivity] = useState("");
-  const [sending, setSending] = useState(false);
-  const noRef = useRef(null);
-  const containerRef = useRef(null);
+  .heart-big { width: 96px; height: 96px; animation: beat 1.4s ease-in-out infinite; }
+  .heart-big path, .float path { fill: var(--accent); }
+  @keyframes beat { 0%, 100% { transform: scale(1); } 15% { transform: scale(1.12); } 30% { transform: scale(1); } 45% { transform: scale(1.08); } }
 
-  const moveNoButton = () => {
-    const container = containerRef.current;
-    if (!container) return;
-    const rect = container.getBoundingClientRect();
-    const btn = noRef.current;
-    const btnW = btn?.offsetWidth || 80;
-    const btnH = btn?.offsetHeight || 40;
-    setNoPos({
-      x: Math.random() * (rect.width - btnW - 20) + 10,
-      y: Math.random() * (rect.height - btnH - 20) + 10,
-    });
-  };
+  h1 {
+    font-family: var(--font-display); font-weight: 600; margin: 0;
+    font-size: clamp(2rem, 8vw, 3.2rem); line-height: 1.1; text-wrap: balance;
+  }
+  .sub { margin: 0; color: var(--muted); font-size: 1.05rem; line-height: 1.5; max-width: 26rem; text-wrap: balance; }
 
-  const handleYes = () => {
-    setPhase("wow");
-    setTimeout(() => setPhase("choose"), 3500);
-  };
+  .actions { display: flex; align-items: center; justify-content: center; gap: 16px; flex-wrap: wrap; min-height: 72px; }
+  button {
+    font-family: var(--font-display); font-weight: 600; cursor: pointer;
+    border-radius: 999px; border: 2px solid transparent; padding: 0.8em 1.8em; font-size: 1.15rem;
+    touch-action: manipulation;
+  }
+  button:focus-visible { outline: 3px solid var(--fg); outline-offset: 3px; }
+  #yes {
+    background: var(--accent); color: var(--accent-fg);
+    font-size: calc(1.15rem * var(--pop)); transition: font-size .25s ease, transform .15s ease;
+    box-shadow: 0 8px 22px -8px var(--accent);
+  }
+  #yes:hover { transform: scale(1.04); }
+  #no {
+    background: var(--soft); color: var(--fg); border-color: var(--soft-line);
+    transition: left .28s cubic-bezier(.3,1.4,.5,1), top .28s cubic-bezier(.3,1.4,.5,1);
+    z-index: 5;
+  }
+  #no.free { position: fixed; }
 
-  const finalActivity = selectedActivity === "Other 💭" ? customActivity : selectedActivity;
-  const isReady = selectedDate && selectedTime && selectedActivity && (selectedActivity !== "Other 💭" || customActivity.trim());
+  .taunt { min-height: 1.6em; margin: 0; color: var(--muted); font-weight: 700; }
 
-  const formatDate = (val) => {
-    if (!val) return "";
-    return new Date(val + "T00:00:00").toLocaleDateString("en-US", {
-      weekday: "long", year: "numeric", month: "long", day: "numeric"
-    });
-  };
+  .float { position: fixed; bottom: -60px; pointer-events: none; animation: rise linear forwards; z-index: 1; }
+  @keyframes rise { to { transform: translateY(-120vh) rotate(var(--rot, 20deg)); opacity: 0; } }
+  .win h1 { font-size: clamp(2.2rem, 9vw, 3.6rem); }
+  .tiny { font-size: .85rem; color: var(--muted); }
 
-  const handleSubmit = async () => {
-    if (!isReady) return;
-    setSending(true);
-    try {
-      await fetch("https://api.web3forms.com/submit", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          access_key: "5b025dae-b719-4a6e-a42d-09931f69d742",
-          subject: "💌 She said YES to a date!",
-          from_name: "Date Request App",
-          to: YOUR_EMAIL,
-          message: `She picked:\n📅 Date: ${formatDate(selectedDate)}\n⏰ Time: ${selectedTime}\n💑 Activity: ${finalActivity}`,
-        }),
-      });
-    } catch (_) {}
-    setSending(false);
-    setPhase("done");
-  };
+  @media (prefers-reduced-motion: reduce) {
+    .heart-big { animation: none; }
+    #no { transition: none; }
+    .float { animation-duration: 0.01s !important; }
+  }
+</style>
 
-  const mailtoLink = `mailto:${YOUR_EMAIL}?subject=💌 She said YES!&body=She picked:%0A📅 ${formatDate(selectedDate)}%0A⏰ ${selectedTime}%0A💑 ${finalActivity}`;
-
-  const cardStyle = {
-    background: "rgba(255,255,255,0.05)",
-    backdropFilter: "blur(16px)",
-    borderRadius: 28,
-    border: "1px solid rgba(255,255,255,0.1)",
-    boxShadow: "0 8px 60px rgba(180,0,120,0.25)",
-    padding: "40px 32px 36px",
-    textAlign: "center",
-    zIndex: 1,
-    width: "min(500px, 94vw)",
-    maxHeight: "92vh",
-    overflowY: "auto",
-  };
-
-  return (
-    <div style={{
-      minHeight: "100vh",
-      background: "linear-gradient(135deg, #1a0a2e 0%, #2d0a4e 40%, #1a0030 100%)",
-      display: "flex", alignItems: "center", justifyContent: "center",
-      fontFamily: "'Georgia', serif", overflow: "hidden", position: "relative",
-    }}>
-      {/* Floating emojis */}
-      {["💗","💜","✨","💫","💗","💜","✨","💫","💗","💜","✨","💫"].map((e, i) => (
-        <div key={i} style={{
-          position: "fixed",
-          left: `${(i * 8.3) % 100}%`,
-          top: `${(i * 13 + 10) % 100}%`,
-          fontSize: `${12 + (i % 3) * 8}px`,
-          opacity: 0.12,
-          animation: `floatUp ${3 + (i % 4)}s ease-in-out infinite alternate`,
-          animationDelay: `${i * 0.4}s`,
-          pointerEvents: "none", zIndex: 0,
-        }}>{e}</div>
-      ))}
-
-      <style>{`
-        @keyframes floatUp { from { transform: translateY(0) rotate(-5deg); } to { transform: translateY(-18px) rotate(5deg); } }
-        @keyframes fadeUp { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes popIn { 0% { transform: scale(0.7); opacity: 0; } 60% { transform: scale(1.12); } 100% { transform: scale(1); opacity: 1; } }
-        @keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 rgba(255,120,180,0.5); } 50% { box-shadow: 0 0 0 14px rgba(255,120,180,0); } }
-        @keyframes wowIn { 0% { opacity:0; transform: scale(0.5) rotate(-8deg); } 60% { transform: scale(1.08) rotate(2deg); } 100% { opacity:1; transform: scale(1) rotate(0deg); } }
-
-        .yes-btn {
-          background: linear-gradient(135deg, #ff6eb4, #ff3d8b, #c0006e);
-          color: white; border: none; padding: 14px 40px; border-radius: 50px;
-          font-size: 20px; font-family: 'Georgia', serif; cursor: pointer;
-          animation: pulse 2s infinite; transition: transform 0.15s, filter 0.15s;
-        }
-        .yes-btn:hover { transform: scale(1.08); filter: brightness(1.1); }
-
-        .no-btn {
-          background: transparent; color: #c084d8; border: 2px solid #7a3fa0;
-          padding: 10px 28px; border-radius: 50px; font-size: 16px;
-          font-family: 'Georgia', serif; cursor: pointer; user-select: none;
-        }
-
-        .chip {
-          background: rgba(255,255,255,0.07); border: 2px solid rgba(255,120,180,0.25);
-          color: #f0d0ff; padding: 10px 20px; border-radius: 30px; cursor: pointer;
-          font-size: 15px; font-family: 'Georgia', serif; transition: all 0.18s; margin: 5px;
-          display: inline-block;
-        }
-        .chip:hover { background: rgba(255,120,180,0.18); border-color: #ff6eb4; color: white; }
-        .chip.on { background: linear-gradient(135deg,#ff6eb4,#c0006e); border-color: #ff6eb4; color: white; font-weight: bold; }
-
-        .date-input {
-          background: rgba(255,255,255,0.08); border: 2px solid rgba(255,120,180,0.35);
-          color: #f0d0ff; padding: 13px 18px; border-radius: 14px;
-          font-size: 16px; font-family: 'Georgia', serif; width: 100%;
-          box-sizing: border-box; outline: none; color-scheme: dark;
-          transition: border-color 0.2s;
-        }
-        .date-input:focus { border-color: #ff6eb4; }
-
-        .custom-input {
-          background: rgba(255,255,255,0.07); border: 2px solid rgba(255,120,180,0.3);
-          color: #f0d0ff; padding: 10px 16px; border-radius: 12px;
-          font-size: 15px; font-family: 'Georgia', serif; width: 100%;
-          box-sizing: border-box; outline: none; margin-top: 10px;
-          transition: border-color 0.2s;
-        }
-        .custom-input:focus { border-color: #ff6eb4; }
-        .custom-input::placeholder { color: #8050a8; }
-
-        .send-btn {
-          background: linear-gradient(135deg,#ff6eb4,#c0006e); color: white; border: none;
-          padding: 14px 48px; border-radius: 50px; font-size: 18px;
-          font-family: 'Georgia', serif; cursor: pointer; margin-top: 20px;
-          transition: transform 0.15s, opacity 0.15s;
-        }
-        .send-btn:hover:not(:disabled) { transform: scale(1.05); }
-        .send-btn:disabled { opacity: 0.35; cursor: not-allowed; }
-
-        .section-label {
-          color: #e0aaff; font-weight: bold; margin-bottom: 10px; font-size: 14px;
-          text-transform: uppercase; letter-spacing: 0.09em; text-align: left;
-        }
-        .section { margin-bottom: 24px; }
-      `}</style>
-
-      {/* ── ASK ── */}
-      {phase === "ask" && (
-        <div ref={containerRef} style={{
-          ...cardStyle,
-          position: "relative",
-          width: "min(420px, 92vw)",
-          minHeight: 300,
-          animation: "popIn 0.5s ease",
-        }}>
-          <div style={{ fontSize: 52, marginBottom: 10, animation: "floatUp 2.5s ease-in-out infinite alternate" }}>💌</div>
-          <h1 style={{ color: "#f8d6ff", fontSize: 28, fontWeight: "normal", margin: "0 0 10px" }}>Hey you... 👀</h1>
-          <p style={{ color: "#c084d8", fontSize: 17, margin: "0 0 36px", lineHeight: 1.6 }}>
-            Would you like to go on a date with me? 🥺
-          </p>
-          <div style={{ display: "flex", gap: 18, justifyContent: "center", alignItems: "center" }}>
-            <button className="yes-btn" onClick={handleYes}>Yes! 🥰</button>
-            <button
-              ref={noRef}
-              className="no-btn"
-              style={noPos.x !== null ? {
-                position: "absolute", left: noPos.x, top: noPos.y,
-                transition: "left 0.15s, top 0.15s",
-              } : {}}
-              onMouseEnter={moveNoButton}
-              onTouchStart={moveNoButton}
-              onClick={moveNoButton}
-            >No 😒</button>
-          </div>
-        </div>
-      )}
-
-      {/* ── WOW ── */}
-      {phase === "wow" && (
-        <div style={{ textAlign: "center", animation: "wowIn 0.6s cubic-bezier(.34,1.56,.64,1) both", zIndex: 1, padding: 32 }}>
-          <div style={{ fontSize: 70, marginBottom: 18 }}>🎉</div>
-          <h2 style={{ color: "#fff", fontSize: 30, fontWeight: "normal", textShadow: "0 0 30px rgba(255,110,180,0.7)", margin: 0 }}>
-            Wow...
-          </h2>
-          <p style={{ color: "#f0a0e0", fontSize: 20, marginTop: 12 }}>
-            I knew you couldn't resist me 😏✨
-          </p>
-        </div>
-      )}
-
-      {/* ── CHOOSE ── */}
-      {phase === "choose" && (
-        <div style={{ ...cardStyle, animation: "fadeUp 0.5s ease both" }}>
-          <div style={{ fontSize: 42, marginBottom: 8 }}>🗓️</div>
-          <h2 style={{ color: "#f8d6ff", fontWeight: "normal", fontSize: 24, margin: "0 0 4px" }}>Let's plan our date!</h2>
-          <p style={{ color: "#b87dd8", marginBottom: 28, fontSize: 15 }}>Pick whatever works for you 💕</p>
-
-          {/* Free date picker */}
-          <div className="section">
-            <p className="section-label">📅 Pick any date</p>
-            <input
-              type="date"
-              className="date-input"
-              value={selectedDate}
-              min={new Date().toISOString().split("T")[0]}
-              onChange={e => setSelectedDate(e.target.value)}
-            />
-            {selectedDate && (
-              <p style={{ color: "#c084d8", fontSize: 13, marginTop: 8, textAlign: "center" }}>
-                ✨ {formatDate(selectedDate)}
-              </p>
-            )}
-          </div>
-
-          {/* Time */}
-          <div className="section">
-            <p className="section-label">⏰ Pick a time</p>
-            <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center" }}>
-              {TIMES.map(t => (
-                <button key={t} className={`chip${selectedTime === t ? " on" : ""}`} onClick={() => setSelectedTime(t)}>{t}</button>
-              ))}
-            </div>
-          </div>
-
-          {/* Activity */}
-          <div className="section">
-            <p className="section-label">💑 What should we do?</p>
-            <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center" }}>
-              {ACTIVITIES.map(a => (
-                <button key={a} className={`chip${selectedActivity === a ? " on" : ""}`} onClick={() => setSelectedActivity(a)}>{a}</button>
-              ))}
-            </div>
-            {selectedActivity === "Other 💭" && (
-              <input
-                className="custom-input"
-                placeholder="Tell me what you have in mind... 🥰"
-                value={customActivity}
-                onChange={e => setCustomActivity(e.target.value)}
-              />
-            )}
-          </div>
-
-          <button className="send-btn" onClick={handleSubmit} disabled={!isReady || sending}>
-            {sending ? "Sending... 💌" : "Send it! 💌"}
-          </button>
-        </div>
-      )}
-
-      {/* ── DONE ── */}
-      {phase === "done" && (
-        <div style={{ textAlign: "center", animation: "popIn 0.6s cubic-bezier(.34,1.56,.64,1) both", zIndex: 1, padding: 32, maxWidth: 420 }}>
-          <div style={{ fontSize: 64, marginBottom: 16 }}>💝</div>
-          <h2 style={{ color: "#fff", fontWeight: "normal", fontSize: 26, margin: "0 0 12px", textShadow: "0 0 30px rgba(255,110,180,0.6)" }}>
-            It's a date! 🎊
-          </h2>
-          <div style={{
-            background: "rgba(255,120,180,0.12)", border: "1px solid rgba(255,120,180,0.3)",
-            borderRadius: 16, padding: "20px 28px", marginTop: 20, color: "#f0d0ff", fontSize: 17, lineHeight: 2,
-          }}>
-            <div>📅 <strong>{formatDate(selectedDate)}</strong></div>
-            <div>⏰ <strong>{selectedTime}</strong></div>
-            <div>💑 <strong>{finalActivity}</strong></div>
-          </div>
-          <p style={{ color: "#c084d8", marginTop: 20, fontSize: 15 }}>Can't wait! See you then 🥰✨</p>
-          <p style={{ color: "#9a6ab0", marginTop: 6, fontSize: 13 }}>Her choice has been sent to you 💌</p>
-          <a href={mailtoLink} style={{ display: "inline-block", marginTop: 14, color: "#f0a0e0", fontSize: 14, textDecoration: "underline", fontFamily: "Georgia, serif" }}>
-            📧 Send to my email manually (backup)
-          </a>
-        </div>
-      )}
+<main class="stage">
+  <section id="ask" class="view">
+    <svg class="heart-big" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7.5-4.6-9.6-9.4C.9 8.2 3 4.5 6.7 4.5c2 0 3.7 1.1 5.3 3 1.6-1.9 3.3-3 5.3-3 3.700 0 5.800 3.700 4.300 7.100C19.500 16.400 12 21 12 21z"/></svg>
+    <h1 id="question">Will you be my girlfriend?</h1>
+    <p class="sub" id="sub">I've liked you for a while now, and I finally got brave enough to ask.</p>
+    <div class="actions" id="actions">
+      <button id="yes" type="button">Yes</button>
+      <button id="no" type="button">No</button>
     </div>
-  );
-}
+    <p class="taunt" id="taunt" aria-live="polite"></p>
+  </section>
+
+  <section id="win" class="view win" hidden>
+    <svg class="heart-big" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7.5-4.6-9.6-9.4C.9 8.2 3 4.5 6.7 4.5c2 0 3.7 1.1 5.3 3 1.6-1.9 3.3-3 5.3-3 3.700 0 5.800 3.700 4.300 7.100C19.500 16.400 12 21 12 21z"/></svg>
+    <h1 id="winTitle">You said yes!</h1>
+    <p class="sub" id="winSub">Best answer ever. Screenshot this and send it to me.</p>
+    <p class="tiny" id="tries"></p>
+  </section>
+</main>
+
+<script>
+  // Edit these to personalise. A name can also be added to the link, e.g. ...#Maria
+  var CONFIG = {
+    herName: "",
+    question: "Will you be my girlfriend?",
+    sub: "I've liked you for a while now, and I finally got brave enough to ask.",
+    winSub: "Best answer ever. Screenshot this and send it to me."
+  };
+
+  var taunts = [
+    "Wrong button.",
+    "Nice try.",
+    "Too slow!",
+    "Are you sure? Think again.",
+    "The other one is right there.",
+    "I'll wait. I have all night.",
+    "That button is broken. Try Yes.",
+    "You can't catch it.",
+    "Please? That one is shy.",
+    "Last chance. Press Yes."
+  ];
+
+  var yes = document.getElementById("yes");
+  var no = document.getElementById("no");
+  var taunt = document.getElementById("taunt");
+  var dodges = 0;
+
+  (function personalise() {
+    var hash = "";
+    try { hash = decodeURIComponent(location.hash.replace("#", "")).replace(/[^\p{L}\p{M} '-]/gu, "").slice(0, 30); } catch (e) {}
+    var name = hash || CONFIG.herName;
+    var q = CONFIG.question;
+    if (name) q = name + ", " + q.charAt(0).toLowerCase() + q.slice(1);
+    document.getElementById("question").textContent = q;
+    document.getElementById("sub").textContent = CONFIG.sub;
+    document.getElementById("winSub").textContent = CONFIG.winSub;
+    if (name) document.getElementById("winTitle").textContent = "You said yes, " + name + "!";
+  })();
+
+  function rand(min, max) { return min + Math.random() * Math.max(0, max - min); }
+
+  function dodge(e) {
+    if (e && e.cancelable) e.preventDefault();
+    dodges++;
+    var pad = 12;
+    var w = no.offsetWidth, h = no.offsetHeight;
+    var vw = window.innerWidth, vh = window.innerHeight;
+    var yr = yes.getBoundingClientRect();
+    var cur = no.getBoundingClientRect();
+    var x, y, tries = 0;
+    do {
+      x = rand(pad, vw - w - pad);
+      y = rand(pad, vh - h - pad);
+      tries++;
+      var overlapsYes = x < yr.right + 16 && x + w > yr.left - 16 && y < yr.bottom + 16 && y + h > yr.top - 16;
+      var tooClose = Math.hypot(x - cur.left, y - cur.top) < 140;
+    } while ((overlapsYes || tooClose) && tries < 40);
+
+    no.classList.add("free");
+    no.style.left = x + "px";
+    no.style.top = y + "px";
+
+    var scale = Math.min(1 + dodges * 0.12, 2);
+    document.documentElement.style.setProperty("--pop", scale);
+    taunt.textContent = taunts[Math.min(dodges - 1, taunts.length - 1)];
+  }
+
+  // Keep a placeholder so the Yes button does not jump when No leaves the row.
+  var placeholder = document.createElement("span");
+  function lift() {
+    if (no.classList.contains("free")) return;
+    var r = no.getBoundingClientRect();
+    placeholder.style.cssText = "display:inline-block;width:" + r.width + "px;height:" + r.height + "px";
+    no.parentNode.insertBefore(placeholder, no);
+    no.style.left = r.left + "px";
+    no.style.top = r.top + "px";
+    no.classList.add("free");
+    void no.offsetWidth;
+  }
+  function onEscape(e) { lift(); dodge(e); }
+
+  no.addEventListener("pointerenter", function (e) { if (e.pointerType === "mouse") onEscape(e); });
+  no.addEventListener("pointerdown", onEscape);
+  no.addEventListener("touchstart", onEscape, { passive: false });
+  no.addEventListener("click", onEscape);
+  no.addEventListener("focus", function (e) { if (dodges > 0) onEscape(e); });
+
+  window.addEventListener("resize", function () {
+    if (!no.classList.contains("free")) return;
+    var r = no.getBoundingClientRect();
+    no.style.left = Math.min(r.left, window.innerWidth - r.width - 12) + "px";
+    no.style.top = Math.min(r.top, window.innerHeight - r.height - 12) + "px";
+  });
+
+  function burst() {
+    var svg = '<svg viewBox="0 0 24 24" width="100%" height="100%" aria-hidden="true"><path d="M12 21s-7.5-4.6-9.6-9.4C.9 8.2 3 4.5 6.7 4.5c2 0 3.7 1.1 5.3 3 1.6-1.9 3.3-3 5.3-3 3.700 0 5.800 3.700 4.300 7.100C19.500 16.400 12 21 12 21z"/></svg>';
+    for (var i = 0; i < 40; i++) {
+      var el = document.createElement("div");
+      var size = rand(18, 54);
+      el.className = "float";
+      el.innerHTML = svg;
+      el.style.width = el.style.height = size + "px";
+      el.style.left = rand(0, 100) + "vw";
+      el.style.opacity = String(rand(0.5, 1));
+      el.style.setProperty("--rot", rand(-40, 40) + "deg");
+      el.style.animationDuration = rand(2.5, 5.5) + "s";
+      el.style.animationDelay = rand(0, 1.2) + "s";
+      document.body.appendChild(el);
+      (function (n) { setTimeout(function () { n.remove(); }, 8000); })(el);
+    }
+  }
+
+  yes.addEventListener("click", function () {
+    no.hidden = true;
+    placeholder.remove();
+    document.getElementById("ask").hidden = true;
+    document.getElementById("win").hidden = false;
+    document.getElementById("tries").textContent = dodges > 0
+      ? "The No button got away " + dodges + (dodges === 1 ? " time." : " times.")
+      : "You didn't even try No. I love that.";
+    burst();
+    setTimeout(burst, 1800);
+  });
+</script>
